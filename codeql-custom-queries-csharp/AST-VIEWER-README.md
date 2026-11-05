@@ -24,6 +24,9 @@ These queries help you understand how CodeQL represents your C# code in its Abst
 
 ## How to Use
 
+Before running an AST query, [install the query pack dependencies](./SECURITY-QUERIES-README.md#installing-query-dependencies).
+The AST queries use the same C# libraries as the other queries in this pack.
+
 ### Step 1: Run an AST Query
 ```
 Right-click on any view-ast-*.ql file → "CodeQL: Run Queries in Selected Files"

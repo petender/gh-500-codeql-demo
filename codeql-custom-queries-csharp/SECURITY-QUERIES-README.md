@@ -56,6 +56,38 @@ This repository contains custom CodeQL security queries designed to detect commo
 
 ## Usage
 
+### Installing Query Dependencies
+
+Before running queries, install the dependencies declared in `codeql-pack.yml`
+using the committed `codeql-pack.lock.yml`. From the repository root:
+
+```powershell
+codeql pack install .\codeql-custom-queries-csharp
+```
+
+If `codeql` is not on your PATH, use VS Code's Command Palette command
+**CodeQL: Install Pack Dependencies** and select this query pack.
+This downloads the C# libraries needed by `import csharp`. Repeat this step on
+each new machine or after changing pack dependencies. A "Could not resolve
+library path" error can indicate that these dependencies have not been installed;
+the lock file alone does not download them.
+
+The pack uses `codeql/csharp-all` 7.4.2 or a compatible later 7.x version.
+Use an up-to-date CodeQL CLI (validated with 2.27.4).
+
+### Using the Demo Database
+
+The working demo database is in [`csharp-database`](../csharp-database).
+In VS Code, use **CodeQL: Choose Database from Folder** to select that folder.
+From the repository root, verify it with:
+
+```powershell
+codeql query run .\codeql-custom-queries-csharp\example.ql --database=.\csharp-database
+```
+
+This is a snapshot of the application, not a live database; recreate it when
+the source changes. It was created using C# no-build extraction.
+
 ### Creating a CodeQL Database
 
 First, create a CodeQL database from your application:
@@ -68,19 +100,38 @@ cd C:\1202demoapp
 codeql database create codeqldb --language=csharp --command="dotnet build"
 ```
 
+If Windows build tracing fails, C# also supports no-build extraction. From the
+repository root, create a separate database without overwriting an existing one:
+
+```powershell
+codeql database create .\csharp-database --language=csharp --source-root=. --build-mode=none
+```
+
+The destination must not already exist. Keep a backup of the demo database or
+choose a different destination when recreating it.
+
+In VS Code, use **CodeQL: Choose Database from Folder** to select the newly
+created database before running queries. Review extraction diagnostics: no-build
+mode can produce incomplete type information if NuGet dependencies cannot be
+resolved or source generators fail.
+
+If a database is incompatible with the installed libraries, back it up before
+attempting `codeql database upgrade` (schema upgrades are irreversible). If no
+upgrade path exists, create a fresh database with the current CLI instead.
+
 ### Running Individual Queries
 
 Run a specific security query against your database:
 
 ```powershell
 # Run the audit logging query
-codeql query run codeql-custom-queries-csharp/security-missing-audit-logging.ql --database=codeqldb
+codeql query run .\codeql-custom-queries-csharp\security-missing-audit-logging.ql --database=.\csharp-database
 
 # Run the SQL injection query
-codeql query run codeql-custom-queries-csharp/security-sql-injection-risk.ql --database=codeqldb
+codeql query run .\codeql-custom-queries-csharp\security-sql-injection-risk.ql --database=.\csharp-database
 
 # Run the comprehensive suite
-codeql query run codeql-custom-queries-csharp/security-comprehensive-suite.ql --database=codeqldb
+codeql query run .\codeql-custom-queries-csharp\security-comprehensive-suite.ql --database=.\csharp-database
 ```
 
 ### Running All Security Queries
@@ -89,10 +140,10 @@ Run all queries in the directory:
 
 ```powershell
 # Run all queries and generate SARIF output
-codeql database analyze codeqldb codeql-custom-queries-csharp --format=sarif-latest --output=security-results.sarif
+codeql database analyze .\csharp-database .\codeql-custom-queries-csharp --format=sarif-latest --output=security-results.sarif
 
 # Generate readable results
-codeql database analyze codeqldb codeql-custom-queries-csharp --format=text
+codeql database analyze .\csharp-database .\codeql-custom-queries-csharp --format=text
 ```
 
 ### Viewing Results in VS Code
